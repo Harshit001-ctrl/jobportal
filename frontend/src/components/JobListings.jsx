@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-const HomeCards = () => {
+const JobListings = ({ isHome = false }) => {
   const [jobs, setJobs] = useState([]); // Stores job listings
   const [searchTerm, setSearchTerm] = useState(""); // Stores search input
   const [filteredJobs, setFilteredJobs] = useState([]); // Stores filtered results
@@ -35,7 +35,6 @@ const HomeCards = () => {
     fetchJobs();
   }, []);
 
-  // Filter jobs when search term changes
   useEffect(() => {
     const results = jobs.filter((job) =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -43,28 +42,33 @@ const HomeCards = () => {
     setFilteredJobs(results);
   }, [searchTerm, jobs]);
 
+  // If on home page, only show first 4 jobs
+  const displayJobs = isHome ? filteredJobs.slice(0, 4) : filteredJobs;
+
   return (
     <section className="py-6">
       <div className="container mx-auto px-4">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-center text-gray-800">Find Your Dream Job</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-800">
+            {isHome ? "Featured Jobs" : "All Jobs"}
+          </h2>
         </div>
 
-        {/* 🔍 Search Bar */}
-        <div className="flex justify-center mb-6">
-          <input
-            type="text"
-            placeholder="Search jobs"
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {!isHome && (
+          <div className="flex justify-center mb-6">
+            <input
+              type="text"
+              placeholder="Search jobs"
+              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
 
-        {/* Job Listings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredJobs.length > 0 ? (
-            filteredJobs.map((job) => (
+          {displayJobs.length > 0 ? (
+            displayJobs.map((job) => (
               <div key={job.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                 <h3 className="text-xl font-semibold text-gray-700">{job.title}</h3>
                 <p className="text-gray-500">{job.company_name}</p>
@@ -83,7 +87,7 @@ const HomeCards = () => {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500">No jobs found.</p>
+            <p className="text-center text-gray-500 col-span-2">No jobs found.</p>
           )}
         </div>
       </div>
@@ -91,4 +95,4 @@ const HomeCards = () => {
   );
 };
 
-export default HomeCards;
+export default JobListings;

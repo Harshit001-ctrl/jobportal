@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const SignUpPage = ({ handleSignUp }) => {
   const [name, setName] = useState("");
@@ -35,7 +35,7 @@ const SignUpPage = ({ handleSignUp }) => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-semibold text-center text-indigo-600 mb-6">Sign Up</h2>
+        <h2 className="text-2xl font-semibold text-center text-indigo-600 mb-6">Login</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -86,9 +86,10 @@ const SignUpPage = ({ handleSignUp }) => {
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <a href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
-            Login here
-          </a>
+
+          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            Login up
+          </Link>
         </p>
       </div>
     </div>

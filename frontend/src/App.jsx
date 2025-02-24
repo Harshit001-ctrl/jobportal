@@ -6,156 +6,111 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom";
-import HomePage from "./pages/HomePage";
 import MainLayout from "./layouts/MainLayout";
+import HomePage from "./pages/HomePage";
 import JobsPage from "./pages/JobsPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import JobPage, { jobLoader } from "./pages/JobPage";
+import JobPage from "./pages/JobPage";
+import Login from "./components/auth/Login";
+import SignUpPage from "./pages/SignUpPage";
 import AddJobPage from "./pages/AddJobPage";
 import EditJobPage from "./pages/EditJobPage";
-import { ToastContainer, toast } from "react-toastify";
+import AdminDashboard from "./Dashboard/AdminDashboard";
+import NotFoundPage from "./pages/NotFoundPage";
+// import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+// import ClientDashboard from './Dashboard/ClientDashboard';
+// import ClientRoute from './components/ClientRoute';
+import { jobLoader } from "./components/Spinner";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Login from "../src/components/auth/Login";
-// import AdminDashboard from "../src/Dashboard/AdminDashboard";
-import SignUpPage from "./pages/SignUpPage";
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user data from the backend
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("http://your-laravel-backend/api/user", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        const data = await response.json();
-        if (data.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
+        const token = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user"); // Retrieve user data
+  
+        if (!token || !storedUser) {
+          setLoading(false);
+          return;
         }
+  
+        const user = JSON.parse(storedUser);
+        setUser(user); // Ensure user state gets updated
+  
       } catch (error) {
         console.error("Error fetching user data:", error);
-        setUser(null);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchUser();
   }, []);
+  
 
-  // Handle user login
-  // const handleLogin = async (email, password) => {
-  //   try {
-  //     // Example API request (Replace this with your actual login logic)
-  //     const response = await fetch("/api/login", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email, password }),
-  //     });
+  const router = createBrowserRouter(
+    createRoutesFromElements(
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="jobs" element={<JobsPage />} />
+        <Route path="jobs/:id" element={<JobPage />} loader={jobLoader} />
+        <Route path="login" element={<Login />} />
+        <Route path="signup" element={<SignUpPage />} />
+        {/* Admin Protected Routes */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
 
-  //     const data = await response.json();
+        <Route
+          path="add-job"
+          element={
+            <AdminRoute>
+              <AddJobPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="edit-job/:id"
+          element={
+            <AdminRoute>
+              <EditJobPage />
+            </AdminRoute>
+          }
+        />
 
-  //     if (data.success) {
-  //       localStorage.setItem("user", JSON.stringify(data.user)); // Store user info
-  //       return true; // Success
-  //     } else {
-  //       return false; // Login failed
-  //     }
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     return false;
-  //   }
-  // };
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    )
+  );
 
-
-  // Handle user signup
-  const handleSignUp = async (email, password) => {
-    try {
-      const response = await fetch("http://your-laravel-backend/api/signup", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await response.json();
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setUser(data.user);  // Update the user state here
-        toast.success("Sign Up Successful!", {
-          position: toast.POSITION.TOP_CENTER,
-        });
-        return true;
-      } else {
-        toast.error("Sign Up Failed! Please try again.", {
-          position: toast.POSITION.TOP_CENTER,
-        });
-        return false;
-      }
-    } catch (error) {
-      toast.error("Error during sign up!", {
-        position: toast.POSITION.TOP_CENTER,
-      });
-      console.error("Error during sign up:", error);
-      return false;
-    }
-  };
-
-  const addJob = async (newJob) => {
-    await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newJob),
-    });
-  };
-
-  const deleteJob = async (id) => {
-    await fetch(`/api/jobs/${id}`, { method: "DELETE" });
-  };
-
-  const updateJob = async (job) => {
-    await fetch(`/api/jobs/${job.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(job),
-    });
-  };
-
-
-
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <MainLayout />,
-      children: [
-        { path: "/", element: <HomePage /> },  // ✅ HomePage loads by default
-        { path: "/jobs", element: <JobsPage /> },
-        { path: "/add-job", element: <AddJobPage addJobSubmit={addJob} />  },
-        { path: "/edit-job/:id", element: <EditJobPage/> },
-        <Route path="/edit-job/:id" element={<EditJobPage updateJobSubmit={updateJob} />} />,
-        <Route path="/jobs/:id" element={<JobPage deleteJob={deleteJob} />} />,
-        { path: "/jobs/:id", element: <JobPage /> },
-        { path: "/login", element: <Login /> },
-        { path: "/signup", element: <SignUpPage /> },
-        { path: "*", element: <NotFoundPage /> },
-      ],
-    },
-  ]);
+  if (loading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <>
-      <ToastContainer />
-      {!loading && <RouterProvider router={router} />}
-
+      <RouterProvider router={router} />
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </>
   );
 };
