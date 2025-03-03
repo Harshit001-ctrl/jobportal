@@ -12,7 +12,6 @@ import JobsPage from "./pages/JobsPage";
 import JobPage from "./pages/JobPage";
 import Login from "./components/auth/Login";
 import SignUpPage from "./pages/SignUpPage";
-import AddJobPage from "./pages/AddJobPage";
 import EditJobPage from "./pages/EditJobPage";
 import AdminDashboard from "./Dashboard/AdminDashboard";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -23,6 +22,7 @@ import AdminRoute from "./components/AdminRoute";
 import { jobLoader } from "./components/Spinner";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AddJobForm } from "./AdminDashboard comp/AddJobForm";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -75,7 +75,7 @@ const App = () => {
           path="add-job"
           element={
             <AdminRoute>
-              <AddJobPage />
+              <AddJobForm />
             </AdminRoute>
           }
         />

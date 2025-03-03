@@ -9,8 +9,16 @@ const Navbar = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        localStorage.removeItem("user"); // Remove invalid data
+        setUser(null);
+      }
+    } else {
+      setUser(null);
     }
   }, [location.pathname]);
 
@@ -18,9 +26,11 @@ const Navbar = () => {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  const handleNavigation = (to) => {
-    setMenuOpen(false);
-    navigate(to);
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/");
   };
 
   const navLinkClass = ({ isActive }) =>
@@ -51,25 +61,21 @@ const Navbar = () => {
             <NavLink to="/jobs" className={navLinkClass}>
               Jobs
             </NavLink>
+
             {!user ? (
               <NavLink to="/login" className={navLinkClass}>
                 Login
               </NavLink>
             ) : (
               <>
-                <NavLink
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className={navLinkClass}
-                >
-                  Dashboard
-                </NavLink>
+                {user.role === "admin" && (
+                  <NavLink to="/admin-dashboard" className={navLinkClass}>
+                    Dashboard
+                  </NavLink>
+                )}
+
                 <button
-                  onClick={() => {
-                    localStorage.removeItem("user");
-                    localStorage.removeItem("token");
-                    setUser(null);
-                    navigate("/");
-                  }}
+                  onClick={handleLogout}
                   className="text-gray-300 hover:text-white hover:bg-blue-500 px-4 py-2 rounded-md transition-colors duration-200"
                 >
                   Logout
@@ -129,6 +135,7 @@ const Navbar = () => {
             >
               Jobs
             </NavLink>
+
             {!user ? (
               <NavLink
                 to="/login"
@@ -139,20 +146,20 @@ const Navbar = () => {
               </NavLink>
             ) : (
               <>
-                <NavLink
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className={navLinkClass}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Dashboard
-                </NavLink>
+                {user.role === "admin" && (
+                  <NavLink
+                    to="/admin-dashboard"
+                    className={navLinkClass}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Dashboard
+                  </NavLink>
+                )}
+
                 <button
                   onClick={() => {
-                    localStorage.removeItem("user");
-                    localStorage.removeItem("token");
-                    setUser(null);
+                    handleLogout();
                     setMenuOpen(false);
-                    navigate("/");
                   }}
                   className="w-full text-left text-gray-300 hover:text-white hover:bg-blue-500 px-4 py-2 rounded-md transition-colors duration-200"
                 >

@@ -4,19 +4,14 @@ import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isAdminLogin, setIsAdminLogin] = useState(true); // Toggle between Admin & Client login
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    setError("");
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(""); // Clear error when typing
   };
 
   const handleSubmit = async (e) => {
@@ -27,25 +22,37 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/login",
-        formData
-      );
-      if (response.data.status === "success") {
+      const apiUrl = isAdminLogin
+        ? "http://127.0.0.1:8000/api/admin/login"
+        : "http://127.0.0.1:8000/api/client/login";
+
+      const response = await axios.post(apiUrl, formData);
+
+
+
+      if (response.data.token) {
         localStorage.setItem("token", response.data.token);
 
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        const userData =
+          response.data.user || response.data.client || response.data.admin;
 
-        if (response.data.user.role === "admin") {
-          navigate("/admin-dashboard", { replace: true }); // Redirects admin
+        if (userData) {
+          localStorage.setItem("user", JSON.stringify(userData));
+
+          if (userData.role === "admin") {
+            navigate("/admin-dashboard", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
         } else {
-          navigate("/dashboard", { replace: true }); // Redirects client
+          setError("User data not found, please try again.");
         }
       } else {
         setError(response.data.message || "Login failed");
+        setError(response.data.message || "Login failed");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred during login");
+      setError(err.response?.data?.message || "Check your password and email");
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +63,20 @@ const Login = () => {
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Welcome Back! Please Sign In
           </h2>
+          <p className="mt-2 text-center text-sm text-red-600">
+            {isAdminLogin
+              ? "You are signing in as an Admin"
+              : "You are signing in as a Client"}
+          </p>
+
+          <button
+            onClick={() => setIsAdminLogin(!isAdminLogin)}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            {isAdminLogin ? "Switch to Client Login" : "Switch to Admin Login"}
+          </button>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

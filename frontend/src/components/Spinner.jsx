@@ -1,4 +1,3 @@
-// Spinner.jsx
 import React from 'react';
 import ClipLoader from 'react-spinners/ClipLoader';
 
@@ -18,7 +17,6 @@ const Spinner = ({ loading }) => {
   );
 };
 
-// Add jobLoader export
 export const jobLoader = () => {
   return <Spinner loading={true} />;
 };

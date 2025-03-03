@@ -1,14 +1,22 @@
 import { Navigate } from "react-router-dom";
 
 const AdminRoute = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = localStorage.getItem("user");
   const token = localStorage.getItem("token");
 
-  if (!user || user.role !== "admin" || !token) {
+  let parsedUser = null;
+
+  try {
+    parsedUser = user ? JSON.parse(user) : null;
+  } catch (error) {
+    localStorage.removeItem("user");
+  }
+
+  if (!parsedUser || parsedUser.role !== "admin" || !token) {
     return <Navigate to="/login" />;
   }
 
-  return children; // Allow access to the admin page if user is admin
+  return children; 
 };
 
 export default AdminRoute;

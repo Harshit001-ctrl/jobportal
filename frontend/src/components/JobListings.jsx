@@ -2,33 +2,34 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const JobListings = ({ isHome = false }) => {
-  const [jobs, setJobs] = useState([]); // Stores job listings
-  const [searchTerm, setSearchTerm] = useState(""); // Stores search input
-  const [filteredJobs, setFilteredJobs] = useState([]); // Stores filtered results
-
-  // Placeholder jobs (if backend fails)
-  const placeholderJobs = [
-    { id: 1, title: "Frontend Developer", company_name: "Tech Corp", location: "Remote", salary: "80,000" },
-    { id: 2, title: "Backend Developer", company_name: "Innovate Ltd", location: "New York", salary: "90,000" },
-    { id: 3, title: "Full-Stack Engineer", company_name: "StartupX", location: "San Francisco", salary: "100,000" },
-  ];
+  const [jobs, setJobs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); 
+  const [filteredJobs, setFilteredJobs] = useState([]); 
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(""); 
 
   // Fetch jobs from API
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch("http://your-laravel-backend/api/jobs");
+        const response = await fetch("http://127.0.0.1:8000/api/jobs");
         const data = await response.json();
-        if (data.length > 0) {
-          setJobs(data);
-          setFilteredJobs(data);
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch jobs");
+        }
+
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs(data.jobs);
+          setFilteredJobs(data.jobs);
         } else {
           throw new Error("No jobs found");
         }
       } catch (error) {
-        console.error("Error fetching jobs, using placeholders:", error);
-        setJobs(placeholderJobs);
-        setFilteredJobs(placeholderJobs);
+        console.error("Error fetching jobs:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -42,7 +43,6 @@ const JobListings = ({ isHome = false }) => {
     setFilteredJobs(results);
   }, [searchTerm, jobs]);
 
-  // If on home page, only show first 4 jobs
   const displayJobs = isHome ? filteredJobs.slice(0, 4) : filteredJobs;
 
   return (
@@ -66,14 +66,25 @@ const JobListings = ({ isHome = false }) => {
           </div>
         )}
 
+        {loading && <p className="text-center text-gray-500">Loading jobs...</p>}
+
+        {error && !loading && (
+          <p className="text-center text-red-500">{error}</p>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {displayJobs.length > 0 ? (
+          {!loading && !error && displayJobs.length > 0 ? (
             displayJobs.map((job) => (
-              <div key={job.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-700">{job.title}</h3>
-                <p className="text-gray-500">{job.company_name}</p>
+              <div
+                key={job.id}
+                className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
+              >
+                <h3 className="text-xl font-semibold text-gray-700">
+                  {job.title}
+                </h3>
+                <p className="text-gray-500">{job.description}</p>
                 <p className="text-sm text-gray-600 mt-2">
-                  Location: {job.location || "Not specified"}
+                  Experience: {job.experience || "Not specified"}
                 </p>
                 <p className="text-sm text-gray-600">
                   Salary: {job.salary ? `$${job.salary}` : "Negotiable"}
@@ -87,7 +98,11 @@ const JobListings = ({ isHome = false }) => {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 col-span-2">No jobs found.</p>
+            !loading && !error && (
+              <p className="text-center text-gray-500 col-span-2">
+                No jobs found.
+              </p>
+            )
           )}
         </div>
       </div>
