@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
+import Spinner from "../components/Spinner";
 
 const EditJobPage = () => {
   const { id } = useParams();
@@ -78,7 +79,7 @@ const EditJobPage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Spinner />;
   if (error) return <div className="text-red-500 text-center">{error}</div>;
 
   return (

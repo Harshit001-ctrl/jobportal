@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
 import {
   Route,
   createBrowserRouter,
@@ -6,23 +6,20 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom";
-import MainLayout from "./layouts/MainLayout";
-import HomePage from "./pages/HomePage";
-import JobsPage from "./pages/JobsPage";
-import JobPage from "./pages/JobPage";
-import Login from "./components/auth/Login";
-import SignUpPage from "./pages/SignUpPage";
-import EditJobPage from "./pages/EditJobPage";
-import AdminDashboard from "./Dashboard/AdminDashboard";
-import NotFoundPage from "./pages/NotFoundPage";
-// import ProtectedRoute from "./components/ProtectedRoute";
+const MainLayout = lazy(() => import("./layouts/MainLayout"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const JobsPage = lazy(() => import("./pages/JobsPage"));
+const JobPage = lazy(() => import("./pages/JobPage"));
+const Login = lazy(() => import("./components/auth/Login"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const EditJobPage = lazy(() => import("./pages/EditJobPage"));
+const AdminDashboard = lazy(() => import("./Dashboard/AdminDashboard"));
+const NotFoundPage=lazy(()=>import("./pages/NotFoundPage"))
 import AdminRoute from "./components/AdminRoute";
-// import ClientDashboard from './Dashboard/ClientDashboard';
-// import ClientRoute from './components/ClientRoute';
-import { jobLoader } from "./components/Spinner";
+import Spinner, { jobLoader } from "./components/Spinner";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { AddJobForm } from "./AdminDashboard comp/AddJobForm";
+const AddJobForm = lazy(() => import("./AdminDashboard comp/AddJobForm"));
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -32,41 +29,84 @@ const App = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user"); // Retrieve user data
-  
+        const storedUser = localStorage.getItem("user"); 
+
         if (!token || !storedUser) {
           setLoading(false);
           return;
         }
-  
+
         const user = JSON.parse(storedUser);
-        setUser(user); // Ensure user state gets updated
-  
+        setUser(user); 
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchUser();
   }, []);
-  
 
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path="/" element={<MainLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="jobs" element={<JobsPage />} />
-        <Route path="jobs/:id" element={<JobPage />} loader={jobLoader} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<SignUpPage />} />
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<Spinner />}>
+            <MainLayout />
+          </Suspense>
+        }
+      >
+        <Route
+          index
+          element={
+            <Suspense fallback={<Spinner />}>
+              <HomePage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="jobs"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <JobsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="jobs/:id"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <JobPage />
+            </Suspense>
+          }
+          loader={jobLoader}
+        />
+        <Route
+          path="login"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <Login />
+            </Suspense>
+          }
+        />
+        <Route
+          path="signup"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <SignUpPage />
+            </Suspense>
+          }
+        />
         {/* Admin Protected Routes */}
         <Route
           path="/admin-dashboard"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <Suspense fallback={<Spinner />}>
+                <AdminDashboard />
+              </Suspense>
             </AdminRoute>
           }
         />
@@ -75,7 +115,9 @@ const App = () => {
           path="add-job"
           element={
             <AdminRoute>
-              <AddJobForm />
+              <Suspense fallback={<Spinner />}>
+                <AddJobForm />
+              </Suspense>
             </AdminRoute>
           }
         />
@@ -83,18 +125,25 @@ const App = () => {
           path="edit-job/:id"
           element={
             <AdminRoute>
-              <EditJobPage />
+              <Suspense fallback={<Spinner />}>
+                <EditJobPage />
+              </Suspense>
             </AdminRoute>
           }
         />
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={
+          <Suspense fallback={<Spinner />}>
+
+            <NotFoundPage />
+          </Suspense>
+          } />
       </Route>
     )
   );
 
   if (loading) {
-    return null; // or a loading spinner
+    return <Spinner />;
   }
 
   return (
