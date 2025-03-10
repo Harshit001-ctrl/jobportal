@@ -61,7 +61,7 @@ export const ApplyJobForm = ({ jobId, onClose }) => {
           setTimeout(() => {
             setSuccessMessage("");
             onClose(); // Close the form after success
-          }, 3000);
+          }, 1000);
         }
       } catch (error) {
         console.error("Application Error:", error);

@@ -28,8 +28,6 @@ const Login = () => {
 
       const response = await axios.post(apiUrl, formData);
 
-
-
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
 
@@ -48,7 +46,6 @@ const Login = () => {
           setError("User data not found, please try again.");
         }
       } else {
-        setError(response.data.message || "Login failed");
         setError(response.data.message || "Login failed");
       }
     } catch (err) {

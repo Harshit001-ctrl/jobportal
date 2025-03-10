@@ -4,7 +4,6 @@ import {
   createBrowserRouter,
   createRoutesFromElements,
   RouterProvider,
-  Navigate,
 } from "react-router-dom";
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -14,12 +13,17 @@ const Login = lazy(() => import("./components/auth/Login"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const EditJobPage = lazy(() => import("./pages/EditJobPage"));
 const AdminDashboard = lazy(() => import("./Dashboard/AdminDashboard"));
-const NotFoundPage=lazy(()=>import("./pages/NotFoundPage"))
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import AdminRoute from "./components/AdminRoute";
 import Spinner, { jobLoader } from "./components/Spinner";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const AddJobForm = lazy(() => import("./AdminDashboard comp/AddJobForm"));
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -29,7 +33,7 @@ const App = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user"); 
+        const storedUser = localStorage.getItem("user");
 
         if (!token || !storedUser) {
           setLoading(false);
@@ -37,7 +41,7 @@ const App = () => {
         }
 
         const user = JSON.parse(storedUser);
-        setUser(user); 
+        setUser(user);
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -47,6 +51,8 @@ const App = () => {
 
     fetchUser();
   }, []);
+
+  const queryClient = new QueryClient();
 
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -132,12 +138,14 @@ const App = () => {
           }
         />
 
-        <Route path="*" element={
-          <Suspense fallback={<Spinner />}>
-
-            <NotFoundPage />
-          </Suspense>
-          } />
+        <Route
+          path="*"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <NotFoundPage />
+            </Suspense>
+          }
+        />
       </Route>
     )
   );
@@ -148,18 +156,20 @@ const App = () => {
 
   return (
     <>
-      <RouterProvider router={router} />
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <ToastContainer
+          position="top-center"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+      </QueryClientProvider>
     </>
   );
 };

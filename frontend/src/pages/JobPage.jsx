@@ -1,41 +1,41 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaArrowLeft, FaMapMarker } from "react-icons/fa";
 import axios from "axios";
-import  {ApplyJobForm}  from "./ApplyJobForm"; 
+import { ApplyJobForm } from "./ApplyJobForm";
+import Spinner from "../components/Spinner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const JobPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [job, setJob] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [showApplyForm, setShowApplyForm] = useState(false);
-  const formRef = useRef(null); 
+  const formRef = useRef(null);
+
+  const fetchJobDetails = async () => {
+    const response = await axios.get(`http://127.0.0.1:8000/api/jobs/${id}`);
+    return response.data;
+  };
+
+  const {
+    data: job,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["job", id],
+    queryFn: () => fetchJobDetails(),
+    staleTime: 1000,
+    retry: 2,
+    onError: (err) => {
+      console.error("Fetch Error:", err.response ? err.response.data : err);
+    },
+  });
 
   useEffect(() => {
-    const fetchJobDetails = async () => {
-      try {
-        const response = await axios.get(
-          `http://127.0.0.1:8000/api/jobs/${id}`
-        );
-        setJob(response.data);
-      } catch (err) {
-        setError("Failed to fetch job details. Please try again.");
-        console.error("Error fetching job details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobDetails();
-
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, [id]);
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    setUser(storedUser);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -54,19 +54,33 @@ const JobPage = () => {
   }, [showApplyForm]);
 
   const deleteJob = async () => {
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/jobs/${id}`);
-      alert("Job deleted successfully!");
-      navigate("/jobs");
-    } catch (err) {
-      alert("Failed to delete job");
-      console.error("Delete Error:", err.response ? err.response.data : err);
-    }
+    await axios.delete(`http://127.0.0.1:8000/api/jobs/${id}`);
+    alert("Job deleted successfully");
+    navigate("/jobs");
   };
 
-  if (loading)
-    return <p className="text-center py-10">Loading job details...</p>;
-  if (error) return <p className="text-center text-red-500 py-10">{error}</p>;
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteJob(id),
+    onSuccess: (data, id) => {
+      queryClient.setQueryData(["job", id], (e) => {
+        return e?.filter((job) => job.id != id);
+      });
+    },
+    onError: (err) => {
+      console.error("Delete Error:", err.response ? err.response.data : err);
+    },
+  });
+
+  if (isLoading)
+    return (
+      <p className="text-center py-10">
+        <Spinner />
+      </p>
+    );
+  if (isError)
+    return <p className="text-center text-red-500 py-10">{isError}</p>;
   if (!job)
     return <p className="text-center text-red-500 py-10">Job not found.</p>;
 
@@ -145,7 +159,7 @@ const JobPage = () => {
                       Edit Job
                     </Link>
                     <button
-                      onClick={deleteJob}
+                      onClick={() => deleteMutation.mutate(id)}
                       className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block"
                     >
                       Delete Job

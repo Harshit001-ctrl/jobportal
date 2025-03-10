@@ -1,49 +1,62 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import Spinner from "./Spinner";
 
 const JobListings = ({ isHome = false }) => {
-  const [jobs, setJobs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); 
-  const [filteredJobs, setFilteredJobs] = useState([]); 
-  const [loading, setLoading] = useState(true); 
-  const [error, setError] = useState(""); 
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch jobs from API
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/api/jobs");
-        const data = await response.json();
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/jobs");
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch jobs");
-        }
-
-        if (data.jobs && data.jobs.length > 0) {
-          setJobs(data.jobs);
-          setFilteredJobs(data.jobs);
-        } else {
-          throw new Error("No jobs found");
-        }
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
+      if (data.jobs && data.jobs.length > 0) {
+        return data.jobs;
+      } else {
+        throw new Error("No jobs found");
       }
-    };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
 
-    fetchJobs();
-  }, []);
+  const {
+    data: jobs,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["jobs"],
+    queryFn: fetchJobs,
+    staleTime: 3000,
+    onError: (err) => {
+      console.error("Error fetching jobs:", err);
+    },
+  });
 
-  useEffect(() => {
-    const results = jobs.filter((job) =>
+  const filteredJobs = useMemo(() => {
+    if (!jobs) return [];
+    return jobs.filter((job) =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredJobs(results);
   }, [searchTerm, jobs]);
 
   const displayJobs = isHome ? filteredJobs.slice(0, 4) : filteredJobs;
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-10">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-center text-red-500 py-10">Error: {error.message}</p>
+    );
+  }
 
   return (
     <section className="py-6">
@@ -66,14 +79,8 @@ const JobListings = ({ isHome = false }) => {
           </div>
         )}
 
-        {loading && <p className="text-center text-gray-500">Loading jobs...</p>}
-
-        {error && !loading && (
-          <p className="text-center text-red-500">{error}</p>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {!loading && !error && displayJobs.length > 0 ? (
+          {displayJobs.length > 0 ? (
             displayJobs.map((job) => (
               <div
                 key={job.id}
@@ -98,11 +105,9 @@ const JobListings = ({ isHome = false }) => {
               </div>
             ))
           ) : (
-            !loading && !error && (
-              <p className="text-center text-gray-500 col-span-2">
-                No jobs found.
-              </p>
-            )
+            <p className="text-center text-gray-500 col-span-2">
+              No jobs found.
+            </p>
           )}
         </div>
       </div>
